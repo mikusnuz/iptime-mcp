@@ -65,7 +65,29 @@ npm run build
 
 The executable entry point is `dist/server.js`.
 
-## Codex / ChatGPT desktop configuration
+For clients that support an environment file or configurable working directory, create a local `.env` first:
+
+```sh
+cp .env.example .env
+```
+
+Fill in the router URL, username, and password. `.env` is ignored by Git and must remain local.
+
+## MCP client setup
+
+Use a user-level configuration whenever possible because router credentials should not be committed to a project. Replace `/absolute/path/to/iptime-mcp` in every example. On Windows, forward-slash paths such as `C:/Users/name/iptime-mcp/dist/server.js` work in JSON. If a desktop client cannot find `node`, use the absolute path reported by `which node` on macOS/Linux or `where node` on Windows.
+
+| Client | User-level configuration |
+|---|---|
+| Codex / ChatGPT desktop | **Settings → MCP servers** or `~/.codex/config.toml` |
+| Claude Desktop | **Settings → Developer → Edit Config** |
+| Claude Code | `claude mcp add --scope user` |
+| Cursor | `~/.cursor/mcp.json` |
+| VS Code agent chat | **MCP: Open User Configuration** |
+| GitHub Copilot CLI | `~/.copilot/mcp-config.json` |
+| Gemini CLI | `~/.gemini/settings.json` |
+
+### Codex / ChatGPT desktop
 
 Add a stdio server in **Settings → MCP servers**, or add the following to `~/.codex/config.toml`. Replace the path and credentials, save, and restart the MCP server.
 
@@ -85,9 +107,11 @@ IPTIME_ROUTER_PASSWORD = "your-router-password"
 
 Codex, its IDE extension, and the ChatGPT desktop app share the MCP configuration on the same Codex host. See the [official MCP configuration guide](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) for current client options.
 
-## Other MCP clients
+If you prefer the local `.env` file, keep `cwd` and omit the `[mcp_servers.iptime.env]` table.
 
-Clients that use the common JSON configuration format can start the same stdio server:
+### Claude Desktop
+
+Open **Settings → Developer → Edit Config**, merge the following `iptime` entry into `claude_desktop_config.json`, save, and fully restart Claude Desktop. Keep any other existing servers in the file.
 
 ```json
 {
@@ -106,7 +130,109 @@ Clients that use the common JSON configuration format can start the same stdio s
 }
 ```
 
-The exact settings file and tool-name prefix depend on the client.
+Check **Connectors** in the chat composer after restart. See the [official Claude Desktop local MCP guide](https://modelcontextprotocol.io/quickstart/user).
+
+### Claude Code
+
+Register the server for all projects with the Claude Code CLI:
+
+```sh
+claude mcp add \
+  --scope user \
+  --env IPTIME_ROUTER_ID=home \
+  --env IPTIME_ROUTER_URL=http://192.168.0.1 \
+  --env IPTIME_ROUTER_USERNAME=admin \
+  --env IPTIME_ROUTER_PASSWORD=your-router-password \
+  --transport stdio iptime \
+  -- node /absolute/path/to/iptime-mcp/dist/server.js
+
+claude mcp get iptime
+```
+
+The final `--transport` option intentionally comes after the environment values so the variadic `--env` parser does not consume the server name. The user-scoped configuration is stored in `~/.claude.json`. See the [official Claude Code MCP guide](https://code.claude.com/docs/en/mcp).
+
+### Cursor
+
+Create or merge `~/.cursor/mcp.json`. This example reads the ignored local `.env` created above:
+
+```json
+{
+  "mcpServers": {
+    "iptime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "envFile": "/absolute/path/to/iptime-mcp/.env"
+    }
+  }
+}
+```
+
+Restart Cursor, then check **Settings → Tools & MCP**. Project-scoped `.cursor/mcp.json` is also supported, but do not put router credentials in a file that may be committed. See the [official Cursor MCP guide](https://cursor.com/docs/mcp).
+
+### VS Code agent chat / GitHub Copilot Chat
+
+Run **MCP: Open User Configuration** from the Command Palette and merge this configuration. VS Code uses the top-level key `servers`, not `mcpServers`.
+
+```json
+{
+  "servers": {
+    "iptime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "envFile": "/absolute/path/to/iptime-mcp/.env"
+    }
+  }
+}
+```
+
+Start or inspect it with **MCP: List Servers** and accept the server trust prompt on first use. `.vscode/mcp.json` is available for workspace-scoped setup, but the user configuration is safer for router credentials. See the [official VS Code MCP setup](https://code.visualstudio.com/docs/agent-customization/mcp-servers) and [configuration reference](https://code.visualstudio.com/docs/agents/reference/mcp-configuration).
+
+### GitHub Copilot CLI
+
+GitHub Copilot CLI does not read VS Code's `.vscode/mcp.json`. Create or merge `~/.copilot/mcp-config.json` instead:
+
+```json
+{
+  "mcpServers": {
+    "iptime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+The configured `cwd` lets `iptime-mcp` load the local `.env`. Verify the connection with `copilot mcp list`. Project-level `.mcp.json` and `.github/mcp.json` are also supported, but never commit router credentials. See the [official Copilot CLI MCP guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers).
+
+### Gemini CLI
+
+Create or merge `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "iptime": {
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "trust": false
+    }
+  }
+}
+```
+
+The configured `cwd` lets the server load `.env`. Keep `trust` false so Gemini continues to ask before tool calls, then run `gemini mcp list`. If the current folder is not trusted, run `gemini trust`. The CLI command defaults to project scope; use `--scope user` when registering manually. See the [official Gemini CLI MCP guide](https://geminicli.com/docs/tools/mcp-server/).
+
+### Other stdio MCP clients
+
+Use `node` as the command, `/absolute/path/to/iptime-mcp/dist/server.js` as its only argument, and pass the `IPTIME_*` variables from `.env`. Do not assume every client uses the same JSON wrapper: for example, VS Code uses `servers`, while Claude Desktop, Cursor, Copilot CLI, and Gemini CLI use `mcpServers`.
 
 ## Environment variables
 

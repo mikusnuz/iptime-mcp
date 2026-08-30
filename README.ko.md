@@ -65,7 +65,29 @@ npm run build
 
 실행 파일은 `dist/server.js`입니다.
 
-## Codex / ChatGPT 데스크톱 설정
+환경 파일이나 작업 디렉터리를 지정할 수 있는 클라이언트에서는 먼저 로컬 `.env`를 만드세요.
+
+```sh
+cp .env.example .env
+```
+
+공유기 URL, 아이디, 비밀번호를 입력합니다. `.env`는 Git에서 제외되며 로컬에만 보관해야 합니다.
+
+## MCP 클라이언트 설정
+
+공유기 자격증명이 프로젝트에 커밋되지 않도록 가능하면 사용자 범위 설정을 사용하세요. 모든 예제의 `/absolute/path/to/iptime-mcp`를 실제 절대 경로로 바꿔야 합니다. Windows의 JSON에서는 `C:/Users/name/iptime-mcp/dist/server.js`처럼 슬래시 경로를 사용할 수 있습니다. 데스크톱 클라이언트가 `node`를 찾지 못하면 macOS/Linux의 `which node` 또는 Windows의 `where node`가 출력한 절대 경로를 사용하세요.
+
+| 클라이언트 | 사용자 범위 설정 |
+|---|---|
+| Codex / ChatGPT 데스크톱 | **설정 → MCP 서버** 또는 `~/.codex/config.toml` |
+| Claude Desktop | **Settings → Developer → Edit Config** |
+| Claude Code | `claude mcp add --scope user` |
+| Cursor | `~/.cursor/mcp.json` |
+| VS Code 에이전트 채팅 | **MCP: Open User Configuration** |
+| GitHub Copilot CLI | `~/.copilot/mcp-config.json` |
+| Gemini CLI | `~/.gemini/settings.json` |
+
+### Codex / ChatGPT 데스크톱
 
 **설정 → MCP 서버**에서 stdio 서버를 추가하거나 `~/.codex/config.toml`에 다음 내용을 추가하세요. 경로와 자격증명을 바꾼 뒤 저장하고 MCP 서버를 재시작합니다.
 
@@ -85,9 +107,11 @@ IPTIME_ROUTER_PASSWORD = "your-router-password"
 
 동일한 Codex 호스트에서는 Codex, IDE 확장 프로그램, ChatGPT 데스크톱 앱이 MCP 설정을 공유합니다. 최신 클라이언트 설정은 [공식 MCP 설정 문서](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)를 참고하세요.
 
-## 다른 MCP 클라이언트 설정
+로컬 `.env`를 사용하려면 `cwd`는 유지하고 `[mcp_servers.iptime.env]` 테이블은 생략하세요.
 
-일반적인 JSON 설정 형식을 사용하는 클라이언트에서도 같은 stdio 서버를 실행할 수 있습니다.
+### Claude Desktop
+
+**Settings → Developer → Edit Config**를 열고 `claude_desktop_config.json`의 기존 설정을 유지한 채 다음 `iptime` 항목을 병합하세요. 저장 후 Claude Desktop을 완전히 종료했다가 다시 실행합니다.
 
 ```json
 {
@@ -106,7 +130,109 @@ IPTIME_ROUTER_PASSWORD = "your-router-password"
 }
 ```
 
-정확한 설정 파일 위치와 도구 이름 접두사는 클라이언트마다 다릅니다.
+재시작한 뒤 채팅 입력창의 **Connectors**에서 연결을 확인합니다. 자세한 내용은 [Claude Desktop 로컬 MCP 공식 문서](https://modelcontextprotocol.io/quickstart/user)를 참고하세요.
+
+### Claude Code
+
+Claude Code CLI에서 모든 프로젝트에 사용할 서버로 등록합니다.
+
+```sh
+claude mcp add \
+  --scope user \
+  --env IPTIME_ROUTER_ID=home \
+  --env IPTIME_ROUTER_URL=http://192.168.0.1 \
+  --env IPTIME_ROUTER_USERNAME=admin \
+  --env IPTIME_ROUTER_PASSWORD=your-router-password \
+  --transport stdio iptime \
+  -- node /absolute/path/to/iptime-mcp/dist/server.js
+
+claude mcp get iptime
+```
+
+마지막 `--env`가 서버 이름까지 값으로 읽지 않도록 `--transport` 옵션을 환경 변수 뒤에 둔 형식입니다. 사용자 범위 설정은 `~/.claude.json`에 저장됩니다. 자세한 내용은 [Claude Code MCP 공식 문서](https://code.claude.com/docs/en/mcp)를 참고하세요.
+
+### Cursor
+
+`~/.cursor/mcp.json`을 만들거나 기존 파일에 병합하세요. 다음 예제는 위에서 만든 Git 제외 대상 `.env`를 읽습니다.
+
+```json
+{
+  "mcpServers": {
+    "iptime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "envFile": "/absolute/path/to/iptime-mcp/.env"
+    }
+  }
+}
+```
+
+Cursor를 재시작한 뒤 **Settings → Tools & MCP**에서 확인합니다. 프로젝트 범위의 `.cursor/mcp.json`도 지원하지만 커밋될 수 있는 파일에 공유기 자격증명을 넣으면 안 됩니다. 자세한 내용은 [Cursor MCP 공식 문서](https://cursor.com/docs/mcp)를 참고하세요.
+
+### VS Code 에이전트 채팅 / GitHub Copilot Chat
+
+Command Palette에서 **MCP: Open User Configuration**을 실행하고 다음 설정을 병합하세요. VS Code의 최상위 키는 `mcpServers`가 아니라 `servers`입니다.
+
+```json
+{
+  "servers": {
+    "iptime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "envFile": "/absolute/path/to/iptime-mcp/.env"
+    }
+  }
+}
+```
+
+**MCP: List Servers**에서 서버를 시작하거나 상태를 확인하고, 처음 실행할 때 신뢰 확인을 승인합니다. 워크스페이스 설정은 `.vscode/mcp.json`에 둘 수 있지만 공유기 자격증명에는 사용자 설정이 더 안전합니다. 자세한 내용은 [VS Code MCP 설정 공식 문서](https://code.visualstudio.com/docs/agent-customization/mcp-servers)와 [설정 레퍼런스](https://code.visualstudio.com/docs/agents/reference/mcp-configuration)를 참고하세요.
+
+### GitHub Copilot CLI
+
+GitHub Copilot CLI는 VS Code의 `.vscode/mcp.json`을 읽지 않습니다. 대신 `~/.copilot/mcp-config.json`을 만들거나 기존 파일에 병합하세요.
+
+```json
+{
+  "mcpServers": {
+    "iptime": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+지정한 `cwd`에서 `iptime-mcp`가 로컬 `.env`를 읽습니다. `copilot mcp list`로 연결을 확인하세요. 프로젝트 범위의 `.mcp.json`과 `.github/mcp.json`도 지원하지만 공유기 자격증명을 절대로 커밋하면 안 됩니다. 자세한 내용은 [Copilot CLI MCP 공식 문서](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)를 참고하세요.
+
+### Gemini CLI
+
+`~/.gemini/settings.json`을 만들거나 기존 파일에 병합하세요.
+
+```json
+{
+  "mcpServers": {
+    "iptime": {
+      "command": "node",
+      "args": ["/absolute/path/to/iptime-mcp/dist/server.js"],
+      "cwd": "/absolute/path/to/iptime-mcp",
+      "trust": false
+    }
+  }
+}
+```
+
+지정한 `cwd`에서 서버가 `.env`를 읽습니다. Gemini가 도구 호출 전 확인을 계속 요청하도록 `trust`를 `false`로 유지하고 `gemini mcp list`를 실행하세요. 현재 폴더가 신뢰되지 않았다면 `gemini trust`를 먼저 실행합니다. CLI 등록 명령의 기본 범위는 프로젝트이므로 직접 등록할 때는 `--scope user`를 사용하세요. 자세한 내용은 [Gemini CLI MCP 공식 문서](https://geminicli.com/docs/tools/mcp-server/)를 참고하세요.
+
+### 그 밖의 stdio MCP 클라이언트
+
+실행 명령은 `node`, 유일한 인자는 `/absolute/path/to/iptime-mcp/dist/server.js`로 지정하고 `.env`의 `IPTIME_*` 변수를 전달하세요. 모든 클라이언트가 같은 JSON 최상위 키를 쓰는 것은 아닙니다. 예를 들어 VS Code는 `servers`를 사용하고 Claude Desktop, Cursor, Copilot CLI, Gemini CLI는 `mcpServers`를 사용합니다.
 
 ## 환경 변수
 
