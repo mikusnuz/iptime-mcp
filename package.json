@@ -1,0 +1,41 @@
+{
+  "name": "iptime-mcp",
+  "version": "0.1.0",
+  "description": "Safety-gated MCP server for managing ipTIME routers",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "iptime-mcp": "dist/server.js"
+  },
+  "scripts": {
+    "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc",
+    "dev": "tsx src/server.ts",
+    "start": "node dist/server.js",
+    "lint": "tsc --noEmit",
+    "test": "node --import tsx --test tests/**/*.test.ts",
+    "prepack": "npm run build"
+  },
+  "keywords": ["mcp", "iptime", "router", "network", "wifi"],
+  "author": "mikusnuz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikusnuz/iptime-mcp.git"
+  },
+  "homepage": "https://github.com/mikusnuz/iptime-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/mikusnuz/iptime-mcp/issues"
+  },
+  "engines": { "node": ">=22" },
+  "files": ["dist/**/*", "README*.md", "llms.txt", "templates/**/*.md", "LICENSE", ".env.example"],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.0"
+  }
+}

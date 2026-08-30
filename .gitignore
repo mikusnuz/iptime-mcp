@@ -1,0 +1,38 @@
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.npmrc
+.codex/
+.claude/
+*.config
+*.bin
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs, archives, caches, and temporary files
+*.log
+*.tgz
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+.cache/
+.tmp/
+tmp/
+
+# Editor and OS metadata
+.DS_Store
+.idea/
+.vscode/
+*.swp

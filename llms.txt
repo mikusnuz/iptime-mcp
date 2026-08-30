@@ -1,0 +1,120 @@
+# iptime-mcp
+
+> Unofficial, safety-gated MCP server for inspecting and managing ipTIME routers through their local administration interfaces.
+
+## Package
+
+- Package: `iptime-mcp`
+- Version: `0.1.0`
+- Runtime: Node.js 22+
+- Transport: stdio MCP
+- Entry point: `dist/server.js`
+- Command after installation: `iptime-mcp`
+- Repository: https://github.com/mikusnuz/iptime-mcp
+- License: MIT
+
+## Purpose
+
+Use iptime-mcp when a user wants to inspect or manage an ipTIME router without navigating the web admin panel. It covers system, administration, WAN/LAN, DHCP, DNS, routing, switching, Wi-Fi, EasyMesh, NAT, port forwarding, firewall, QoS, VPN, DDNS, USB/NAS, logs, routines, host scanning, and Wake-on-LAN.
+
+The local catalog currently contains 334 operations: 171 reads and 163 writes. Availability depends on router model, installed packages, interface generation, and firmware.
+
+## Compatibility
+
+- iUX3: JSON RPC through `/cgi/service.cgi`; known catalog methods are checked with `api/has`.
+- Mobile iUX and classic CGI: only explicit safe read mappings are exposed.
+- The fixed catalog is based on methods observed in an iUX3 application shipped with firmware 15.36.6.
+- `api/has` verifies known catalog entries; it does not expose arbitrary unknown router methods.
+
+## Environment
+
+Single router:
+
+- `IPTIME_ROUTER_URL` — required router base URL
+- `IPTIME_ROUTER_ID` — optional profile id, default `default`
+- `IPTIME_ROUTER_USERNAME` — administrator username
+- `IPTIME_ROUTER_PASSWORD` — administrator password
+- `IPTIME_ALLOW_INSECURE_REMOTE_HTTP` — optional, default `false`
+- `IPTIME_TLS_FINGERPRINT` — optional SHA-256 certificate fingerprint
+- `IPTIME_TIMEOUT_MS` — optional, default 12000, bounded to 1000–60000
+
+Multiple routers:
+
+- `IPTIME_ROUTERS` — JSON array of profiles
+- Prefer `username_env` and `password_env` fields that reference separate environment variables.
+- Pass `router_id` when more than one router is configured.
+
+Never request credentials in chat or pass them as MCP tool arguments. Credentials belong in the MCP process environment only.
+
+## MCP tools
+
+- `iptime_status` — detect interface, authenticate if configured, and read product/system status
+- `iptime_login` — authenticate from environment credentials; accepts `captcha_code` only when needed
+- `iptime_logout` — end the router session
+- `iptime_capabilities` — verify catalogued operations for the target router
+- `iptime_list_operations` — list the fixed catalog, optionally by domain or read/write mode
+- `iptime_read` — execute one read-only operation
+- `iptime_backup_config` — save a new owner-only `.config` backup without overwriting
+- `iptime_plan_change` — create a generic immutable write plan
+- `iptime_plan_firmware_upgrade` — hash a `.bin` file and create a critical upgrade plan
+- `iptime_plan_config_restore` — hash a `.config` file and create a critical restore plan
+- `iptime_apply_change` — apply one plan after exact confirmation
+- `iptime_cancel_change` — cancel a pending plan
+- `iptime_list_plans` — list in-memory plans
+
+## MCP resources
+
+- `iptime://configuration` — configured profiles with credentials removed
+- `iptime://operations` — operation catalog, risks, methods, readbacks, and parameter hints
+
+## Required workflow
+
+1. Call `iptime_status`.
+2. Call `iptime_capabilities` for the relevant domain.
+3. Use `iptime_list_operations` to select an exact operation and inspect `paramsHint`.
+4. Execute reads directly with `iptime_read`.
+5. For any change, create a plan. Show the user the operation, parameters, risk, previous state, expiry, and exact confirmation text.
+6. Call `iptime_apply_change` only after the user explicitly repeats the exact confirmation string.
+7. If a write outcome is unknown, inspect `verification` and do not retry blindly.
+
+Plans expire after 10 minutes, are single-use, integrity-checked, serialized per router, and stored only in process memory.
+
+## Safety constraints
+
+- Public-address plain HTTP is blocked unless explicitly enabled. Prefer LAN, VPN, or HTTPS.
+- Do not enable insecure remote HTTP on the user's behalf without a clear, informed request.
+- Never infer confirmation from a general request and never synthesize the plan's confirmation string for the user.
+- Connectivity and critical operations can disconnect the user or make the router unreachable.
+- Back up configuration before high-risk changes when practical.
+- Never retry a write after timeout or uncertain transport outcome; use returned readback verification.
+- Treat `.config` backups and MCP client configuration files as secrets.
+- Password, token, session, private-key, and PSK-like result fields are redacted by the server.
+
+## Parameter notes
+
+`params` may be an object, array, string, number, boolean, or null. Do not replace an omitted parameter with `{}`. Examples:
+
+- `system.temperature`: `"cpu"` (default supplied)
+- `network.info`: `["extern_addr"]` (default supplied)
+- DHCP configuration/status/reservations: `"lan"` (default supplied)
+- `wireless.channel.list`: `"2g"` or `"5g"`
+- `ddns.config`: `"iptime"` (default supplied)
+- `ddns.status.get`: configured hostname
+- `nas.user.show`: `{"service":"ftp"}` or another applicable service
+
+## Limitations
+
+- This project is not affiliated with EFM Networks or ipTIME.
+- Router APIs are private and firmware-dependent.
+- Legacy adapters intentionally support only a small read-only subset and may return raw text.
+- Some log/history and item-specific calls require IDs or ranges obtained from another read.
+- CAPTCHA may require opening the router admin page once.
+- TLS fingerprint checking supplements normal certificate validation and does not trust an otherwise invalid self-signed certificate.
+- Firmware image compatibility with the router model is not automatically validated.
+
+## Agent instruction files
+
+- `AGENTS.md` — contribution and repository safety rules
+- `templates/AGENTS.md` — copy into a project that uses iptime-mcp
+- `templates/CLAUDE.md` — Claude Code usage template
+- `README.md` and `README.ko.md` — complete English and Korean setup guides
