@@ -15,7 +15,7 @@ It can inspect router state, discover which catalogued operations a specific mod
 - Runtime capability checks on iUX3 through the router's `api/has` method
 - Detection for iUX3, Mobile iUX, and classic CGI interfaces
 - Read-only operations can run directly
-- Every router change requires a short-lived plan and exact confirmation
+- Every router change uses a short-lived, reviewable plan without confirmation tokens
 - Configuration backup, restore planning, and firmware upgrade planning
 - Single-router and multi-router profiles
 - Credential and session-value redaction
@@ -40,8 +40,10 @@ Legacy support is intentionally limited to known-safe mappings for system inform
 Router changes can interrupt internet access or make the admin interface unreachable. `iptime-mcp` therefore separates reading from writing:
 
 1. `iptime_plan_change` or a file-specific planning tool creates an immutable plan without changing the router.
-2. The plan reports the operation, parameters, current state when available, risk, expiry, and exact confirmation text.
-3. `iptime_apply_change` accepts the plan only when the confirmation text matches exactly.
+2. The plan reports the operation, parameters, current state when available, risk, and expiry.
+3. `iptime_apply_change` applies that exact plan using only its `plan_id`; users never need to copy an `APPLY <UUID>` token.
+
+A specific request for the same change is sufficient authorization. Clients should ask once more in ordinary language only when a critical-risk plan, such as firmware, restore, reset, credential, or storage-format work, was not already explicitly authorized. MCP clients may still show their normal destructive-tool approval prompt.
 
 Plans expire after 10 minutes, are single-use, include an integrity digest, and are serialized per router. When a write response is lost, the server attempts a readback and does not retry the write automatically. Plans are held in memory and disappear when the MCP process restarts.
 
@@ -280,7 +282,7 @@ When one router is configured, `router_id` may be omitted. With multiple routers
 | `iptime_plan_change` | Create a generic router-change plan without applying it |
 | `iptime_plan_firmware_upgrade` | Hash a local `.bin` image and create a critical-risk upgrade plan |
 | `iptime_plan_config_restore` | Hash a local `.config` backup and create a critical-risk restore plan |
-| `iptime_apply_change` | Apply one pending plan after exact confirmation |
+| `iptime_apply_change` | Apply one pending plan by ID; no confirmation token required |
 | `iptime_cancel_change` | Cancel a pending plan |
 | `iptime_list_plans` | List pending and completed in-memory plans |
 
@@ -297,8 +299,8 @@ When one router is configured, `router_id` may be omitted. With multiple routers
 2. Call `iptime_capabilities`, optionally filtered by a domain such as `wireless`, `network`, `vpn`, or `usb`.
 3. Use `iptime_list_operations` to find the exact operation and parameter hint.
 4. Run reads with `iptime_read`.
-5. For a change, create a plan and show its risk, parameters, previous state, expiry, and confirmation text to the user.
-6. Apply only after the user explicitly repeats the exact confirmation string.
+5. For a change, create a plan and show its risk, parameters, previous state, and expiry to the user.
+6. If the plan matches the user's specific request, apply it without asking them to repeat a token or plan ID. Ask once in natural language only for a critical-risk change that was not already explicitly authorized.
 7. If the outcome is reported as unknown, inspect the returned verification state before doing anything else.
 
 Useful read operations include:

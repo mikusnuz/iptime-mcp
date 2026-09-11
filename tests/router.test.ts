@@ -64,11 +64,13 @@ test('iUX3 discovery, authentication, reads, and planned writes work end to end'
   const store = new PlanStore(manager);
   const plan = await store.create('home', 'portforward.add', { name: 'web', protocol: 'tcp', external_port: 8080, internal_ip: '192.168.0.2', internal_port: 80 });
   assert.equal(plan.state, 'pending');
+  assert.equal('confirmation' in plan, false);
   const beforeWrites = mock.calls.filter((call) => call.method === 'portforward/add').length;
-  await assert.rejects(store.apply(plan.id, 'wrong confirmation'));
-  assert.equal(mock.calls.filter((call) => call.method === 'portforward/add').length, beforeWrites);
-  const applied = await store.apply(plan.id, plan.confirmation);
+  const applied = await store.apply(plan.id);
   assert.equal(applied.state, 'applied');
-  assert.equal(mock.calls.filter((call) => call.method === 'portforward/add').length, 1);
+  assert.equal(mock.calls.filter((call) => call.method === 'portforward/add').length, beforeWrites + 1);
   assert.deepEqual(applied.verification, { rules: [] });
+  await assert.rejects(store.apply(plan.id), (error: unknown) => (
+    error instanceof Error && error.message === 'Plan is already applied'
+  ));
 });

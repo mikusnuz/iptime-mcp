@@ -8,13 +8,13 @@ Use the configured `iptime` MCP server for ipTIME router inspection and administ
 2. Call `iptime_capabilities` for the relevant domain.
 3. Find the exact catalog entry and parameter shape with `iptime_list_operations`.
 4. Execute reads with `iptime_read`.
-5. For any write, create a plan first and show its operation, parameters, previous state, risk, expiry, and exact confirmation string.
-6. Apply the plan only after the user explicitly repeats the exact confirmation string.
+5. For any write, create a plan first and show its operation, parameters, previous state, risk, and expiry.
+6. If the plan matches the user's specific request, apply it without asking them to repeat a token or plan id. Ask once in natural language only for a critical-risk change not already explicitly authorized.
 
 ## Non-negotiable safety rules
 
 - Router usernames and passwords belong only in the MCP process environment. Never request them in chat or pass them as tool arguments.
-- Do not infer, manufacture, or repeat a plan confirmation for the user.
+- Do not require or manufacture plan confirmation tokens. A vague request is not authorization for a specific write.
 - Warn before connectivity or critical actions that can interrupt access, reboot, reset, restore, upgrade firmware, change administrator access, or format storage.
 - Prefer a configuration backup before high-risk work.
 - Never enable public plain HTTP access without an explicit, informed request.

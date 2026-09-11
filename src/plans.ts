@@ -62,7 +62,7 @@ export class PlanStore {
     const createdAt = new Date();
     const unsigned: Omit<ChangePlan, 'digest'> = {
       id, ...fields, createdAt: createdAt.toISOString(), expiresAt: new Date(createdAt.getTime() + 10 * 60_000).toISOString(),
-      confirmation: `APPLY ${id}`, state: 'pending',
+      state: 'pending',
     };
     const plan = { ...unsigned, digest: digest(unsigned) };
     this.plans.set(id, plan);
@@ -86,19 +86,18 @@ export class PlanStore {
     return structuredClone(plan);
   }
 
-  async apply(id: string, confirmation: string): Promise<ChangePlan> {
+  async apply(id: string): Promise<ChangePlan> {
     const current = this.locks.get(this.get(id).routerId) ?? Promise.resolve();
     let release!: () => void;
     const next = new Promise<void>((resolvePromise) => { release = resolvePromise; });
     this.locks.set(this.get(id).routerId, current.then(() => next));
     await current;
-    try { return await this.applyLocked(id, confirmation); } finally { release(); }
+    try { return await this.applyLocked(id); } finally { release(); }
   }
 
-  private async applyLocked(id: string, confirmation: string): Promise<ChangePlan> {
+  private async applyLocked(id: string): Promise<ChangePlan> {
     const plan = this.get(id);
     if (plan.state !== 'pending') throw new IptimeError(`Plan is already ${plan.state}`, 'PLAN_NOT_PENDING');
-    if (confirmation !== plan.confirmation) throw new IptimeError('Confirmation text does not match the plan', 'CONFIRMATION_MISMATCH');
     if (Date.now() > Date.parse(plan.expiresAt)) { plan.state = 'expired'; throw new IptimeError('Change plan expired; create a new plan', 'PLAN_EXPIRED'); }
     const { digest: storedDigest, ...unsigned } = plan;
     if (digest(unsigned) !== storedDigest) throw new IptimeError('Change plan integrity check failed', 'PLAN_TAMPERED');

@@ -19,7 +19,7 @@ const profiles = loadProfiles();
 const routers = new RouterManager(profiles);
 const plans = new PlanStore(routers);
 const server = new McpServer({ name: 'iptime-mcp', version: pkg.version }, {
-  instructions: 'Use iptime_status, then iptime_capabilities before choosing an operation. Reads may run directly. Every router write must be created with an iptime_plan_* tool and applied only after the user reviews its risk and repeats the exact confirmation string. Never ask for or pass router credentials as tool arguments. Do not retry a write when its outcome is unknown; inspect the returned verification state first.',
+  instructions: 'Use iptime_status, then iptime_capabilities before choosing an operation. Reads may run directly. Create a plan before every router write and show its operation, parameters, risk, and previous state. A specific user request for the same change is sufficient authorization; do not ask the user to repeat a token or plan id. Ask for an additional natural-language confirmation only for critical-risk plans that the user has not already explicitly authorized. Never ask for or pass router credentials as tool arguments. Do not retry a write when its outcome is unknown; inspect the returned verification state first.',
 });
 
 function output(value: unknown) {
@@ -134,10 +134,9 @@ register('iptime_plan_config_restore', 'Hash a local ipTIME configuration backup
   file_path: z.string().min(1),
 }, async ({ router_id, file_path }) => plans.createAttachment(router_id as string | undefined, 'config.restore.file', file_path as string));
 
-register('iptime_apply_change', 'Apply exactly one pending plan after its confirmation text is repeated verbatim.', {
+register('iptime_apply_change', 'Apply exactly one pending plan. No confirmation token or repeated plan id is required.', {
   plan_id: z.string().uuid(),
-  confirmation: z.string().min(1),
-}, async ({ plan_id, confirmation }) => plans.apply(plan_id as string, confirmation as string));
+}, async ({ plan_id }) => plans.apply(plan_id as string));
 
 register('iptime_cancel_change', 'Cancel a pending change plan.', { plan_id: z.string().uuid() }, async ({ plan_id }) => plans.cancel(plan_id as string));
 

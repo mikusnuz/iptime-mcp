@@ -5,7 +5,7 @@
 ## Package
 
 - Package: `iptime-mcp`
-- Version: `0.1.0`
+- Version: `0.2.0`
 - Runtime: Node.js 22+
 - Transport: stdio MCP
 - Entry point: `dist/server.js`
@@ -58,7 +58,7 @@ Never request credentials in chat or pass them as MCP tool arguments. Credential
 - `iptime_plan_change` — create a generic immutable write plan
 - `iptime_plan_firmware_upgrade` — hash a `.bin` file and create a critical upgrade plan
 - `iptime_plan_config_restore` — hash a `.config` file and create a critical restore plan
-- `iptime_apply_change` — apply one plan after exact confirmation
+- `iptime_apply_change` — apply one pending plan by ID without a confirmation token
 - `iptime_cancel_change` — cancel a pending plan
 - `iptime_list_plans` — list in-memory plans
 
@@ -73,8 +73,8 @@ Never request credentials in chat or pass them as MCP tool arguments. Credential
 2. Call `iptime_capabilities` for the relevant domain.
 3. Use `iptime_list_operations` to select an exact operation and inspect `paramsHint`.
 4. Execute reads directly with `iptime_read`.
-5. For any change, create a plan. Show the user the operation, parameters, risk, previous state, expiry, and exact confirmation text.
-6. Call `iptime_apply_change` only after the user explicitly repeats the exact confirmation string.
+5. For any change, create a plan. Show the user the operation, parameters, risk, previous state, and expiry.
+6. If the plan matches a specific user request, call `iptime_apply_change` without asking the user to repeat a token or plan id. Ask once in natural language only for a critical-risk change not already explicitly authorized.
 7. If a write outcome is unknown, inspect `verification` and do not retry blindly.
 
 Plans expire after 10 minutes, are single-use, integrity-checked, serialized per router, and stored only in process memory.
@@ -83,7 +83,7 @@ Plans expire after 10 minutes, are single-use, integrity-checked, serialized per
 
 - Public-address plain HTTP is blocked unless explicitly enabled. Prefer LAN, VPN, or HTTPS.
 - Do not enable insecure remote HTTP on the user's behalf without a clear, informed request.
-- Never infer confirmation from a general request and never synthesize the plan's confirmation string for the user.
+- Never require or invent confirmation tokens. Do not treat a vague request as authorization for a specific write.
 - Connectivity and critical operations can disconnect the user or make the router unreachable.
 - Back up configuration before high-risk changes when practical.
 - Never retry a write after timeout or uncertain transport outcome; use returned readback verification.

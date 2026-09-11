@@ -1,6 +1,6 @@
 {
   "name": "iptime-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Safety-gated MCP server for managing ipTIME routers",
   "type": "module",
   "main": "dist/server.js",

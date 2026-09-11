@@ -34,7 +34,8 @@ Run `npm pack --dry-run` after changing package metadata, entry points, build ou
 - Never accept router credentials as MCP tool arguments. Read them only from process environment configuration.
 - Never print, return, fixture, or commit real credentials, session cookies, DDNS hostnames, public router URLs, backups, firmware images, or user-specific paths.
 - Keep public-address plain HTTP blocked by default. Do not weaken redirect, same-origin, DNS, timeout, or response-size checks.
-- Do not expose a direct router-write tool. Every write must pass through an immutable plan and exact user confirmation.
+- Do not expose a direct router-write tool. Every write must pass through an immutable plan. Never require the user to copy a confirmation token or repeat a plan id.
+- Treat a specific user request for the same operation and parameters as authorization. For critical-risk plans not already explicitly authorized, request a normal natural-language confirmation after presenting the risk.
 - Do not automatically retry writes after authentication, timeout, transport, or response ambiguity. Reconcile with a readback where possible.
 - Classify operations conservatively. Connectivity-affecting, destructive, credential, certificate, restore, reset, reboot, firmware, and storage-format actions must not be downgraded.
 - Configuration backups must remain non-overwriting, owner-readable only, size-bounded, and ignored by version control.

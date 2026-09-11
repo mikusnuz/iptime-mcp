@@ -13,13 +13,13 @@ Use iptime-mcp for router status, connected devices, DHCP reservations, Wi-Fi, E
 3. Use `iptime_list_operations` to find the exact operation, mode, risk, and parameter hint.
 4. Run read-only operations with `iptime_read`.
 5. For every change, call `iptime_plan_change`, `iptime_plan_firmware_upgrade`, or `iptime_plan_config_restore` first.
-6. Present the plan's operation, parameters, risk, previous state, expiry, and exact confirmation string to the user.
-7. Call `iptime_apply_change` only after the user explicitly repeats that exact confirmation string.
+6. Present the plan's operation, parameters, risk, previous state, and expiry to the user.
+7. If the plan matches the user's specific request, call `iptime_apply_change` without asking them to repeat a token or plan id. Ask once in natural language only for a critical-risk change not already explicitly authorized.
 
 ## Safety rules
 
 - Never ask the user to paste router credentials into chat or a tool call. Credentials must already exist in the MCP server environment.
-- Never treat a general request such as “change it” as the exact plan confirmation. Do not repeat or synthesize the confirmation on the user's behalf.
+- Never require or synthesize plan confirmation tokens. Do not treat a vague request such as “change it” as authorization for a specific write.
 - Warn clearly before connectivity or critical changes that may disconnect the user, reboot the router, reset configuration, change admin access, restore a backup, upgrade firmware, or format storage.
 - Prefer creating a configuration backup before high-risk changes when the router supports it.
 - Never enable public plain HTTP access or `IPTIME_ALLOW_INSECURE_REMOTE_HTTP` without an explicit, informed user decision.

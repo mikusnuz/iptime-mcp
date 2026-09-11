@@ -45,7 +45,6 @@ export interface ChangePlan {
   before?: JsonValue;
   createdAt: string;
   expiresAt: string;
-  confirmation: string;
   state: 'pending' | 'applied' | 'cancelled' | 'expired' | 'failed';
   digest: string;
   result?: JsonValue;
