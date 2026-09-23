@@ -56,6 +56,10 @@ ipTIME 관리자 페이지를 매번 열지 않고도 공유기를 조회하고 
 
 가능하면 공유기 LAN 주소, VPN 주소 또는 신뢰할 수 있는 HTTPS 주소를 사용하세요.
 
+## npm에서 설치
+
+MCP 클라이언트의 stdio 실행 명령을 `npx -y iptime-mcp`로 설정하고 비공개 환경 설정에 `IPTIME_ROUTER_URL`, `IPTIME_ROUTER_USERNAME`, `IPTIME_ROUTER_PASSWORD`를 넣으세요. 공유기 URL은 신뢰할 수 있는 LAN 또는 VPN 주소를 사용하세요. 아래 예제는 로컬 스크립트 경로가 필요한 클라이언트를 위한 소스 설치 방식입니다.
+
 ## 소스에서 설치
 
 ```sh

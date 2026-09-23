@@ -1,6 +1,7 @@
 {
   "name": "iptime-mcp",
   "version": "0.2.0",
+  "mcpName": "io.github.mikusnuz/iptime-mcp",
   "description": "Safety-gated MCP server for managing ipTIME routers",
   "type": "module",
   "main": "dist/server.js",

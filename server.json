@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mikusnuz/iptime-mcp",
+  "description": "Manage ipTIME routers through a local, safety-gated MCP server with firmware-aware capabilities.",
+  "repository": {
+    "url": "https://github.com/mikusnuz/iptime-mcp",
+    "source": "github"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "iptime-mcp",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "IPTIME_ROUTER_URL",
+          "description": "URL of the ipTIME router administrator interface on a trusted local network or VPN.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "IPTIME_ROUTER_USERNAME",
+          "description": "Router administrator username.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "IPTIME_ROUTER_PASSWORD",
+          "description": "Router administrator password.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

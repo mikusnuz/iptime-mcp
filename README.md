@@ -56,6 +56,10 @@ Plans expire after 10 minutes, are single-use, include an integrity digest, and 
 
 Use a LAN address, a VPN address, or a trusted HTTPS endpoint whenever possible.
 
+## Install from npm
+
+Use `npx -y iptime-mcp` as the stdio command in an MCP client and set `IPTIME_ROUTER_URL`, `IPTIME_ROUTER_USERNAME`, and `IPTIME_ROUTER_PASSWORD` in its private environment configuration. Keep the router URL on a trusted LAN or VPN. The examples below show the equivalent source-install setup for clients that need a local script path.
+
 ## Install from source
 
 ```sh
