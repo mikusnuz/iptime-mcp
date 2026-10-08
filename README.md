@@ -33,6 +33,8 @@ The catalog covers administration, firmware, backup and restore, WAN/LAN/DHCP/DN
 
 The fixed operation catalog is based on methods observed in an iUX3 application shipped with firmware 15.36.6. A method appearing in the catalog does not mean every router supports it. Always use `iptime_capabilities` for the target router before choosing an operation.
 
+Firmware 16.00.0 introduced ipTIME ID, EasyMesh client connection pinning, and paginated system logs ([official release notes](https://www.iptime.com/support/downloads/27529)). These additions have not been validated against this catalog. This server connects directly to the configured router; it does not authenticate through ipTIME ID or provide its cloud relay. Do not infer support for new features from a firmware version or from a successful status query. For logs, inspect the actual response and firmware-specific pagination before treating a result as complete. Only verified methods are exposed, and unknown write capabilities remain blocked.
+
 Legacy support is intentionally limited to known-safe mappings for system information, DHCP leases and configuration, port forwarding, and Wake-on-LAN. Legacy responses may be returned as raw text. Unknown legacy writes are rejected.
 
 ## Safety model

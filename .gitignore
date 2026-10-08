@@ -9,6 +9,7 @@ coverage/
 .env.*
 !.env.example
 .npmrc
+.mcpregistry_*
 .codex/
 .claude/
 *.config

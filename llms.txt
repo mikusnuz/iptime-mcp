@@ -24,6 +24,7 @@ The local catalog currently contains 334 operations: 171 reads and 163 writes. A
 - iUX3: JSON RPC through `/cgi/service.cgi`; known catalog methods are checked with `api/has`.
 - Mobile iUX and classic CGI: only explicit safe read mappings are exposed.
 - The fixed catalog is based on methods observed in an iUX3 application shipped with firmware 15.36.6.
+- Firmware 16.00.0 adds ipTIME ID, EasyMesh client pinning, and paginated system logs. Those additions are not validated by this catalog. This server uses a direct router connection, not ipTIME ID authentication or cloud relay. Do not assume new-feature coverage or complete logs from a successful status/read call; check capabilities and actual pagination. See https://www.iptime.com/support/downloads/27529.
 - `api/has` verifies known catalog entries; it does not expose arbitrary unknown router methods.
 
 ## Environment
