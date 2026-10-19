@@ -60,6 +60,12 @@ test('iUX3 discovery, authentication, reads, and planned writes work end to end'
   assert.equal(probe.authenticated, false);
   assert.deepEqual(await router.read('product.info'), { model: 'TEST' });
   assert.equal(mock.calls.filter((call) => call.method === 'session/login').length, 1);
+  const beforeUnsafeRead = mock.calls.length;
+  await assert.rejects(router.read('system.name', 'changed-name'), /Use its write operation/);
+  await assert.rejects(router.read('http.config', { port: 8080 }), /Use its write operation/);
+  assert.equal(mock.calls.length, beforeUnsafeRead);
+  await router.read('ddns.config');
+  assert.deepEqual(mock.calls.at(-1), { method: 'ddns/config', params: 'iptime' });
 
   const store = new PlanStore(manager);
   const plan = await store.create('home', 'portforward.add', { name: 'web', protocol: 'tcp', external_port: 8080, internal_ip: '192.168.0.2', internal_port: 80 });

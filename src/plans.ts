@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { stat, readFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 import { IptimeError } from './errors.js';
-import { operationSpec, validateParams } from './catalog.js';
+import { operationSpec, validateWriteParams } from './catalog.js';
 import type { ChangePlan, JsonObject, JsonValue } from './types.js';
 import type { RouterManager } from './router.js';
 
@@ -38,7 +38,7 @@ export class PlanStore {
     const router = this.routers.get(routerId);
     const spec = operationSpec(operation, 'write');
     await router.assertSupported(operation);
-    const params = validateParams(rawParams);
+    const params = validateWriteParams(spec, rawParams);
     let before: JsonValue | undefined;
     if (spec.readback) {
       // Never reuse write parameters for a readback. Several iUX3 `config`

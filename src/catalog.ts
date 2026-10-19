@@ -632,6 +632,7 @@ function operationName(method: string): string {
 
 const readbackAliases: Record<string, string> = {
   'acl/show': 'acl/config',
+  'cwmp/config': 'cwmp/get',
   'dhcpd/config': 'dhcpd/config/get',
   'firewall/config': 'firewall/get',
   'firewall/rule/show': 'firewall/get',
@@ -680,11 +681,52 @@ const parameterMetadata: Record<string, Pick<OperationSpec, 'paramsHint' | 'defa
   'ddns/status/get': { paramsHint: 'Configured FQDN or service name' },
   'nas/user/show': { paramsHint: 'Object with service, for example {"service":"ftp"}' },
   'routine/expire': { paramsHint: 'Array of routine identifiers to expire' },
+  'cwmp/set': { paramsHint: 'CWMP configuration object. Firmware 16.00.4 accepts ACS CA PEM text as acs.cacert (maximum 8192 bytes; empty string removes it). Certificate changes require the complete active/acs/cpe configuration, including real credential values; redacted read output cannot be replayed. This is a critical-risk write.' },
 };
 for (const spec of specs) Object.assign(spec, parameterMetadata[spec.method] ?? {});
 
 export const OPERATION_CATALOG = Object.freeze(specs);
 export const OPERATION_MAP = new Map(OPERATION_CATALOG.map((spec) => [spec.operation, spec]));
+
+// Shared iUX3 methods switch from reading to writing when configuration
+// parameters are present. Only the observed DDNS provider selector is a query.
+export function validateReadParams(spec: OperationSpec, value: unknown): JsonValue | undefined {
+  const params = validateParams(value);
+  if (!sharedConfigWrites.has(spec.method)) return params;
+  if (params === undefined || params === null) return undefined;
+  if (typeof params === 'object' && !Array.isArray(params) && Object.keys(params).length === 0) return undefined;
+  if (spec.method === 'ddns/config' && params === 'iptime') return params;
+  throw new IptimeError(`Parameters for ${spec.operation} can change router settings. Use its write operation through iptime_plan_change.`, 'UNSAFE_READ_PARAMS');
+}
+
+export function validateWriteParams(spec: OperationSpec, value: unknown): JsonValue | undefined {
+  const params = validateParams(value);
+  if (spec.method === 'cwmp/set' && params && typeof params === 'object' && !Array.isArray(params)) {
+    if (JSON.stringify(params).includes('[redacted]')) {
+      throw new IptimeError('Redacted CWMP values cannot be sent back to the router. Supply the intended configuration with actual credentials, or stop.', 'REDACTED_WRITE_PARAMS');
+    }
+    const acs = params.acs;
+    if (acs && typeof acs === 'object' && !Array.isArray(acs) && 'cacert' in acs) {
+      const certificate = acs.cacert;
+      // Matches the size and text checks in the official A2004SE 16.00.4 UI.
+      if (typeof certificate !== 'string' || Buffer.byteLength(certificate, 'utf8') > 8192 ||
+        (certificate !== '' && (!certificate.includes('-----BEGIN CERTIFICATE-----') ||
+          certificate.indexOf('-----END CERTIFICATE-----') <= certificate.indexOf('-----BEGIN CERTIFICATE-----') || /["\\\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(certificate) ||
+          certificate.includes('PRIVATE KEY')))) {
+        throw new IptimeError('acs.cacert must be CA certificate PEM text up to 8192 bytes, or an empty string to remove it.', 'INVALID_CERTIFICATE');
+      }
+      const cpe = params.cpe;
+      // The official UI sends the complete configuration, not a certificate-only patch.
+      if (typeof params.active !== 'boolean' || typeof acs.inform !== 'boolean' || typeof acs.interval !== 'number' ||
+        !['time', 'url', 'user', 'pass'].every((key) => typeof acs[key] === 'string') ||
+        !cpe || typeof cpe !== 'object' || Array.isArray(cpe) || typeof cpe.port !== 'number' ||
+        !['interface', 'user', 'pass'].every((key) => typeof cpe[key] === 'string')) {
+        throw new IptimeError('Certificate changes require the complete active/acs/cpe configuration, including credentials. Do not assume cwmp/set preserves omitted fields.', 'INCOMPLETE_CWMP_CONFIG');
+      }
+    }
+  }
+  return params;
+}
 
 export function operationSpec(operation: string, expectedMode?: 'read' | 'write'): OperationSpec {
   const spec = OPERATION_MAP.get(operation);

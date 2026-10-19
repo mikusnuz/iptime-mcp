@@ -1,5 +1,5 @@
 import { AuthRequiredError, IptimeError } from './errors.js';
-import { OPERATION_CATALOG, operationSpec, validateParams } from './catalog.js';
+import { OPERATION_CATALOG, operationSpec, validateReadParams, validateWriteParams } from './catalog.js';
 import { detectAdapter } from './detect.js';
 import { RouterTransport } from './transport.js';
 import type { RouterAdapter } from './adapters/adapter.js';
@@ -62,13 +62,13 @@ export class RouterHandle {
 
   async read(operation: string, params?: unknown): Promise<JsonValue> {
     const spec = operationSpec(operation, 'read');
-    const validated = validateParams(params);
+    const validated = validateReadParams(spec, params);
     return this.callMethod(spec.method, validated === undefined ? spec.defaultParams : validated, 'read');
   }
 
   async write(operation: string, params?: unknown): Promise<JsonValue> {
     const spec = operationSpec(operation, 'write');
-    return this.callMethod(spec.method, validateParams(params), 'write');
+    return this.callMethod(spec.method, validateWriteParams(spec, params), 'write');
   }
 
   async capabilities(force = false): Promise<Capability[]> {

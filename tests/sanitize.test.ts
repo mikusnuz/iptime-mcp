@@ -7,3 +7,9 @@ test('credentials and sessions are recursively redacted', () => {
     username: 'admin', password: '[redacted]', nested: { session_id: '[redacted]', token: '[redacted]', wpaKey: '[redacted]', normal: 1 },
   });
 });
+
+test('CWMP ACS and CPE password fields are redacted', () => {
+  assert.deepEqual(sanitize({ acs: { pass: 'fixture-acs' }, cpe: { pass: 'fixture-cpe' } }), {
+    acs: { pass: '[redacted]' }, cpe: { pass: '[redacted]' },
+  });
+});

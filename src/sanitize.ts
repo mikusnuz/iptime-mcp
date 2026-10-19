@@ -1,6 +1,6 @@
 function isSecretKey(key: string): boolean {
   const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return /(?:password|passwd|passphrase|secret|token|session|captcha|privatekey|presharedkey|apikey|authkey|wpakey|wpapsk|psk|cookie)/.test(normalized) || normalized === 'pw' || normalized === 'key';
+  return /(?:password|passwd|passphrase|secret|token|session|captcha|privatekey|presharedkey|apikey|authkey|wpakey|wpapsk|psk|cookie)/.test(normalized) || normalized === 'pass' || normalized === 'pw' || normalized === 'key';
 }
 
 export function sanitize(value: unknown, depth = 0): unknown {
